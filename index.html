@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Computer Vision Image Classification using Transfer Learning is an application of the Tensorflow library with a rock paper scissors dataset. The application of the Tensorflow library uses Transfer Learning or readily available models. Then the model results are exported into TensorflowJS. "
+    />
+    <meta name="keywords" content="tensorflow, tensorflowjs, tailwindcss" />
+    <meta name="author" content="Muhammad Ridho Isdi" />
+    <link rel="shortcut icon" href="./assets/logo.svg" type="image/svg" />
+    <title>CV: Image Classification</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
+  </head>
+  <body>
+    <main
+      class="min-h-screen flex md:flex-row flex-col-reverse md:justify-normal justify-end md:py-0 py-4 bg-[url('./assets/bg.jpg')] bg-cover"
+    >
+      <div
+        class="md:basis-2/5 basis-full flex flex-col justify-center items-center"
+      >
+        <p class="text-white text-2xl">Result</p>
+        <div
+          class="relative md:w-1/2 w-[150px] md:h-1/2 h-[150px] flex justify-center items-center border border-[rgba(255,255,255,0.3)] rounded-xl bg-[rgba(255,255,255,0)] shadow-[0_4px_30px_rgba(0,0,0,0.1)] backdrop-blur-[6.2px]"
+        >
+          <img src="./assets/start.svg" id="label" alt="image" class="w-2/4" />
+          <p
+            class="absolute top-[5%] right-[5%] text-white font-bold text-xl"
+            id="score"
+          >
+            0%
+          </p>
+        </div>
+      </div>
+      <div
+        class="md:basis-3/5 basis-full flex flex-col justify-center items-center gap-4"
+      >
+        <p class="text-white text-2xl text-center">
+          CV: Image Classification using Transfer Learning
+        </p>
+        <div
+          class="md:w-[650px] w-[300px] md:h-[490px] h-[225px] p-[5px] border border-[rgba(255,255,255,0.3)] rounded-xl bg-[rgba(255,255,255,0)] shadow-[0_4px_30px_rgba(0,0,0,0.1)] backdrop-blur-[6.2px]"
+        >
+          <video src="" id="video" width="640" height="480"></video>
+        </div>
+        <div class="md:w-[650px] w-[300px] flex justify-between">
+          <button
+            class="w-[120px] h-[40px] rounded-lg text-white font-bold bg-green-400"
+            id="startVideo"
+          >
+            Start
+          </button>
+          <button
+            class="w-[120px] h-[40px] rounded-lg text-white font-bold bg-red-400"
+            id="stopVideo"
+          >
+            Stop
+          </button>
+        </div>
+      </div>
+    </main>
+
+    <script>
+      const video = document.getElementById("video");
+      const startVideo = document.getElementById("startVideo");
+      const stopVideo = document.getElementById("stopVideo");
+      const label = document.getElementById("label");
+      const score = document.getElementById("score");
+
+      let cam, img;
+
+      startVideo.addEventListener("click", async () => {
+        cam = await tf.data.webcam(video);
+        main(cam);
+      });
+
+      stopVideo.addEventListener("click", () => {
+        cam.stop();
+      });
+
+      async function main(cam) {
+        try {
+          const img = await cam.capture();
+          const MODEL_URL = "./saved_web_model_RPS/model.json";
+          const model = await tf.loadGraphModel(MODEL_URL);
+
+          const timeStart = Date.now();
+          const data = tf.image.resizeBilinear(img, [160, 160]);
+          const input = tf.expandDims(data).toFloat();
+          const outputs = model.execute(input);
+          const className = ["paper", "rock", "scissors"];
+          //console.log(className[tf.argMax(outputs.dataSync()).dataSync()]);
+          label.src = `./assets/${
+            className[tf.argMax(outputs.dataSync()).dataSync()]
+          }.svg`;
+          //console.log(tf.max(outputs.dataSync()).dataSync() * 100);
+          score.innerHTML = `${(
+            tf.max(outputs.dataSync()).dataSync() * 100
+          ).toFixed(2)}%`;
+          const timeStop = Date.now();
+          const delay = timeStop - timeStart;
+
+          setTimeout(() => {
+            main(cam);
+          }, delay);
+        } catch (err) {
+          console.log(err);
+        }
+      }
+    </script>
+  </body>
+</html>
